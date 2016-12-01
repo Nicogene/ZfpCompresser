@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2.2)
 
-SET(PROJECTNAME zfpcompresser)
+SET(PROJECTNAME zfpcompressermodule)
 PROJECT(${PROJECTNAME})
 
 # Make CMake aware of the cmake folder for local FindXXX scripts,
@@ -28,7 +28,7 @@ option(ZFP "Enable use of ZFP compression library." ON)
 if(ZFP)
 	find_package(ZFP REQUIRED)
 	if (ZFP_FOUND)
-	message("-- Found YARP library: ${ZFP_LIBRARY}")
+	message("-- Found ZFP library: ${ZFP_LIBRARY}")
     	include_directories(${ZFP_INCLUDE_DIR})
 	else (ZFP_FOUND)
     	message("-- Did not find ZFP library.")
