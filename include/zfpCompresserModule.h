@@ -24,6 +24,10 @@ public:
     double getPeriod();
     bool interruptModule();
     bool close();
+protected:
+//    int compressAndDecompress(float* array, int nx, int ny, float tolerance);
+    int compress(float* array, float* &compressed, int &zfpsize, int nx, int ny, float tolerance);
+    int decompress(float* array, float* &decompressed, int zfpsize, int nx, int ny, float tolerance);
 };
 
 #endif
