@@ -15,15 +15,11 @@ bool ZFPCompresserModule::configure(yarp::os::ResourceFinder &rf){
     bool ret=portIn.open("/ZFPCompresser/depthImage:i");
     ret &= portOut.open("/ZFPCompresser/depthImage:o");
 
-    //Connect ports
-    //ret &= NetworkBase::connect("/depthCamera/depthImage:o", portIn.getName());
-
     if(!ret) {
         yError()<<"Could not connect to some of the ports";
         return false;
     }
-//    thread = new ThreadCompresser(33,buffer,portOut); //30 Hz;
-//    thread->start();
+
 
     return true;
 }
@@ -64,7 +60,7 @@ bool ZFPCompresserModule::updateModule(){
         return false;
     }
 
-    //imageOut.setExternal(decompressed,image->width(),image->height());
+    //imageOut.setExternal(decompressed,image->width(),image->height());//segmentation fault!!
     imageOut.resize(image->width(),image->height());
     memcpy(imageOut.getRawImage(),decompressed,image->width()*image->height()*4);
     portOut.write();
@@ -114,13 +110,12 @@ int ZFPCompresserModule::compress(float* array, float* &compressed, int &zfpsize
     else
         yInfo()<<"compression successful, ratio of compression:"<<(nx*ny*4.0)/(zfpsize)<<":1"<<"orgSize="
               <<nx*ny*4.0<<"compressedSize="<<zfpsize;//4 -> float
-//      fwrite(buffer, 1, zfpsize, stdout);
 
+
+    compressed = (float*) malloc(zfpsize);
+    memcpy(compressed,(float*) stream_data(zfp->stream),zfpsize);
 
     /* clean up */
-    compressed = (float*) malloc(zfpsize);
-    //memcpy(compressed,(float*)buffer,bufsize);
-    memcpy(compressed,(float*) stream_data(zfp->stream),zfpsize);
     zfp_field_free(field);
     zfp_stream_close(zfp);
     stream_close(stream);
@@ -139,7 +134,6 @@ int ZFPCompresserModule::decompress(float* array, float* &decompressed, int zfps
     bitstream* stream; /* bit stream to write to or read from */
 
     type = zfp_type_float;
-//    stream=stream_open(array,nx*ny*10);
     decompressed = (float*) malloc(nx*ny*sizeof(float));
     field = zfp_field_2d(decompressed, type, nx, ny);
 
@@ -150,9 +144,7 @@ int ZFPCompresserModule::decompress(float* array, float* &decompressed, int zfps
     /*  zfp_stream_set_rate(zfp, rate, type, 3, 0); */
     /*  zfp_stream_set_precision(zfp, precision, type); */
     zfp_stream_set_accuracy(zfp, tolerance, type);
-//    yDebug()<<"1";
-//    buffer = malloc(zfpsize);
-//    yDebug()<<"2";
+
     /* allocate buffer for compressed data */
     bufsize = zfp_stream_maximum_size(zfp, field);
     buffer = malloc(bufsize);
@@ -192,124 +184,6 @@ int ZFPCompresserModule::decompress(float* array, float* &decompressed, int zfps
 
 }
 
-//int ZFPCompresserModule::compressAndDecompress(float* array, float* decompressed, int nx, int ny, float tolerance)
-//{
-//    int status = 0;    /* return value: 0 = success */
-//    zfp_field* field;  /* array meta data */
-//    zfp_type type;     /* array scalar type */
-//    zfp_stream* zfp;   /* compressed stream */
-//    zfp_stream* zfp2;
-//    void* bufferComp;/* storage for compressed stream */
-//    void* bufferDecomp;
-//    size_t bufsize;    /* byte size of compressed bufferComp */
-//    bitstream* stream; /* bit stream to write to or read from */
-//    bitstream* stream2;
-//    size_t zfpsize;    /* byte size of compressed stream */
-////    std::vector<float> errorvec(nx*ny);
-//    int rate=16;
-//    uint precision=5;
-
-//    bufferDecomp=malloc(nx*ny*4);
-
-//    /* allocate meta data for the 3D array a[nz][ny][nx] */
-//    type = zfp_type_float;
-//    //      field = zfp_field_3d(array, type, nx, ny, nz);
-//    field = zfp_field_2d(array,type,nx,ny);
-
-//    /* allocate meta data for a compressed stream */
-//    zfp = zfp_stream_open(NULL);
-
-//    /* set compression mode and parameters via one of three functions */
-//    //zfp_stream_set_rate(zfp, rate, type, 2, 0);
-////    zfp_stream_set_precision(zfp, precision, type);
-//    zfp_stream_set_accuracy(zfp, tolerance, type);
-
-//    /* allocate buffer for compressed data */
-//    bufsize = zfp_stream_maximum_size(zfp, field);
-//    bufferComp = malloc(bufsize);
-
-//    /* associate bit stream with allocated buffer */
-//    stream = stream_open(bufferComp, bufsize);
-//    zfp_stream_set_bit_stream(zfp, stream);
-//    zfp_stream_rewind(zfp);
-
-//    /* compress and decompress entire array */
-//    /* compress array and output compressed stream */
-//    zfpsize = zfp_compress(zfp, field);
-//    if (!zfpsize) {
-//        fprintf(stderr, "compression failed\n");
-//        status = 1;
-//        return status;
-//    }
-//    else
-//        yInfo()<<"compression successful, ratio of compression:"<<(nx*ny*4.0)/(zfpsize)<<":1"<<"orgSize="
-//              <<nx*ny*4.0<<"compressedSize="<<zfpsize;//4 -> float
-//  //        else
-//  //          fwrite(buffer, 1, zfpsize, stdout);
-
-//    /* read compressed stream and decompress array */
-//    memcpy(bufferComp,stream_data(zfp->stream),zfpsize);
-
-//    /* allocate meta data for a compressed stream */
-//    zfp2 = zfp_stream_open(NULL);
-
-//    /* set compression mode and parameters via one of three functions */
-////    zfp_stream_set_rate(zfp, rate, type, 2, 0);
-//    zfp_stream_set_accuracy(zfp2, tolerance, type);
-////    zfp_stream_set_precision(zfp, precision, type);
-
-//    /* allocate buffer for compressed data */
-//    bufsize = zfp_stream_maximum_size(zfp2, field);
-////    bufferComp = malloc(bufsize);
-
-//    /* associate bit stream with allocated buffer */
-//    stream2 = stream_open(bufferDecomp, bufsize);
-//    zfp_stream_set_bit_stream(zfp2, stream2);
-//    zfp_stream_rewind(zfp2);
-//    if (!zfp_decompress(zfp2, field)) {
-//      fprintf(stderr, "decompression failed\n");
-//      status = 1;
-//      return status;
-//    }
-//    else
-//      yInfo()<<"decompression successful";
-
-////    for(int j=0;j<ny;j++){
-////        for(int i=0;i<nx;i++){
-////            errorvec[i + nx * (j)]=fabs(array_org[i + nx * (j)]-((float*) field->data)[i + nx * (j)]);
-////        }
-////    }
-////    yInfo()<<"Max error:"<<*std::max_element(errorvec.begin(),errorvec.end())<<"Average error"
-////          <<accumulate( errorvec.begin(), errorvec.end(), 0.0)/errorvec.size();;
-
-//    /* clean up */
-
-
-//    //ImageOf<PixelFloat> image((float*)field->data);
-
-////    ImageOf<PixelFloat> &image = portOut.prepare();
-////    //image.setPixelCode(VOCAB_PIXEL_MONO_FLOAT);
-////    image.setExternal(/*field->data*/array, nx, ny);
-////    portOut.write();
-
-
-
-////    Bottle& output = portOut.prepare();
-////    output.clear();
-////    output.
-////    cout << "writing " << output.toString().c_str() << endl;
-////    portOut.write();
-
-//    //zfp_field_free(field);
-//    zfp_stream_close(zfp);
-//    stream_close(stream);
-//    free(bufferComp);
-//    free(bufferDecomp);
-
-//    return status;
-//}
-
-
 double ZFPCompresserModule::getPeriod(){
     return 0.0;
 }
@@ -323,15 +197,8 @@ bool ZFPCompresserModule::interruptModule(){
 bool ZFPCompresserModule::close(){
 
     yInfo()<<"Waiting for worker thread...";
-//    while(thread->getNumProcessed() < numIter && !interrupted)
-//        yarp::os::Time::delay(0.1);
-
-    //stop thread
-//    thread->close();
     //close ports
     portIn.close();
     portOut.close();
-    //deallocate memory
-    delete thread;
     return true;
 }

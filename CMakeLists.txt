@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2.2)
 
-SET(PROJECTNAME zfpcompressermodule)
+SET(PROJECTNAME ZFPCompresserModule)
 PROJECT(${PROJECTNAME})
 
 # Make CMake aware of the cmake folder for local FindXXX scripts,
